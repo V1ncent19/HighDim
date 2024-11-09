@@ -852,6 +852,8 @@ Complexity是从随机过程的角度对一个集合的“大小”和“形状�
 
 \section{Minimax Risk}
 
+更多内容见\ref{subsec:LeCam}.
+
 \subsection{Problem Formulation}
 对于一批假设分布类$ \mathcal{P}=\{\mathbb{P}\} $，我们感兴趣于估计某个所谓的“参数”
 \begin{align*}
@@ -918,7 +920,7 @@ Complexity是从随机过程的角度对一个集合的“大小”和“形状�
 进一步只需：1) upper bound $ I(Z,J) $; 2) 选择合适的$ \delta  $，即相应的$ 2\delta  $ packing.
 
 
-
+{\color{red}未完成}，余下部分转移到\ref{subsec:LeCam}进行了。
 
 
 
@@ -1044,8 +1046,15 @@ $ f $的不同取法导致不同的散度，而不同的任务其实会boil down
     \end{align*}
     \item Hellinger散度：$ f(t)=(\sqrt{t}-1)^2 $，这个也是对称的，且容易tensorize
     \begin{align*}
-        H^2(P,Q):= \dfrac{ 1 }{ 2 } \int (\sqrt{p}-\sqrt{q})^2 \,\mathrm{d}\mu 
+        H^2(P,Q):=  \int (\sqrt{p}-\sqrt{q})^2 \,\mathrm{d}\mu 
     \end{align*}
+
+    它可以导出一个常用量：
+    \begin{align*}
+        1-\dfrac{ 1 }{ 2 } H^2(P,Q) = \int \sqrt{pq} \,\mathrm{d}\mu
+    \end{align*}
+    
+    
 \end{itemize}
 
     
@@ -1064,22 +1073,463 @@ $ f $的不同取法导致不同的散度，而不同的任务其实会boil down
     \end{align*}
     即有了“额外的”信息$ P_X $后，$ D_f $上升
     \item 考虑某种channel model：将$ X $通过$ P_{Y|X} $生成$ Y $，具体来说，能够将$ P_X $随机变量生成为$ P_Y $, similarly将$Q_X$生成为$ Q_Y $，那么有
-    \begin{align*}
+    \begin{align}\label{eq:info_channel}
          D_f(P_X\Vert Q_X) \geq D_f(P_Y\Vert Q_Y)
-    \end{align*}
+    \end{align}
     即通过了信息channel后，信息减少，$ D_f $下降。
 
     \textbf{Remark}: 这个性质的一个延申是：对于任意给定的region $ E $，我们总能诱导出关于$ P $，$ Q $的Bernoulli分布$ P(E) = \mathrm{Id}_{P\in E} $，$ Q(E) = \mathrm{Id}_{Q\in E} $，这相当于是一种channel，所以自然的结果是
     \begin{align*}
         D_f(P\Vert Q) \geq D_f(P(E)\Vert Q(E))
     \end{align*}
-    而Bernoulli是一类比较好研究的随机变量，我们可以通过研究Bernoulli变量+遍历各种$ E $来研究$ D_f $的bound。
+    而Bernoulli是一类比较好研究的随机变量，我们可以通过研究Bernoulli变量+遍历/optimize over各种$ E $来研究$ D_f $的bound。
 \end{itemize}
 
     
 
 \subsubsection{Relation between $ f $-Divergence and Other Properties}
 
+
+一些常用的，$ f $-divergence之间的关系：
+\begin{itemize}[topsep=2pt,itemsep=0pt]
+    \item Sandwiched between TV and Heillinger:
+    \begin{align*}
+        0\leq \dfrac{ 1 }{ 2  } H^2(P,Q)\leq d_\mathrm{ TV }(P,Q)\leq H(P,Q)\sqrt{1-\dfrac{ H^2(P,Q) }{ 4 } } \leq 1  
+    \end{align*}
+    \item Pinsker inequality:
+    \begin{align*}
+        d_\mathrm{ TV }(P,Q)\leq \sqrt{ \dfrac{ 1 }{ 2 } D_{KL}(P\Vert Q) } 
+    \end{align*}
+    
+    
+    \item Tensorization of $ \chi^2 $ and Hellinger:
+    \begin{align*}
+        \chi^2(\prod_{i=1}^n P_i,\prod_{i=1}^n Q_i) = & \prod_{i=1}^n \left( 1 + \chi^2(P_i,Q_i) \right) -1 \\
+        H^2(\prod_{i=1}^n P_i,\prod_{i=1}^n Q_i) = & 2-2\prod_{i=1}^n \left( 1- \dfrac{ H^2(P_i,Q_i) }{ 2 } \right) 
+    \end{align*}
+    
+    
+    
+\end{itemize}
+
+
+\subsubsection{Mutual Information}
+
+实际上信息量本身并不是重要的，信息如何在processing过程中流动才是。引入Mutual Information就是用来描述这种情况。
+
+具体来说，我们有两个随机变量$ X,Y $，他们的联合分布是$ P_{XY}$, 边缘分布分别是$ P_X $和$ P_Y $，那么他们的Mutual Information定义为：
+\begin{align*}
+    I(X;Y):= D_{KL}(P_{XY}\Vert P_XP_Y) 
+\end{align*}
+i.e.联合分布与边缘分布的KL散度。
+
+它有几种等价定义（或者称之为性质/理解方法）：
+\begin{itemize}[topsep=2pt,itemsep=0pt]
+    \item $ Y|X $（或vice versa）这个channel的信息：
+    \begin{align*}
+        I(X;Y)= D_{KL}(P_{Y|X}\Vert P_Y \big\vert P_X) = D_{KL}(P_{X|Y}\Vert P_X \big\vert P_Y)
+    \end{align*}
+    \item 信息流对称：
+    \begin{align*}
+        I(X;Y) = I(Y;X) 
+    \end{align*}
+    \item 熵的差：同样是反映channel的内涵
+    \begin{align*}
+        I(X;Y) = H(X) - H(X|Y) = H(Y) - H(Y|X) ,\qquad H(\xi ):= \mathbb{E}\left[ -\log f(\xi ) \right] 
+    \end{align*}
+    
+    \item 优化视角：
+    \begin{align*}
+        I(X;Y)= \mathop{ \inf }\limits_{Q} D_{KL}(P_{Y|X}\Vert Q \big\vert P_X) 
+    \end{align*}
+    
+    
+\end{itemize}
+
+
+既然Mutual Information是一个channel的信息，那么对于一个channel的pipeline我们自然会有单调关系。具体来说我们formalize成一个Markov chain $ X \leftrightarrow Y \leftrightarrow Z $，那么有
+\begin{align*}
+    I(X;Z)\leq  I(X;Y)
+\end{align*}
+这个结果是很自然的，通过Markov chain这种“概率化”的channel传递时，信息会减少。
+
+
+
+
+
+\textbf{Note:} 基于KL散度的互信息是最常见的版本，但当然也可以定义general的$ f $-divergence的互信息：
+\begin{align*}
+    I_f(X;Y):= D_f(P_{Y|X}\Vert P_Y \big\vert P_X)
+\end{align*}
+
+
+
+
+\subsection{Review of Minimax Theory}
+
+
+前面已经提到过Minimax risk的定义
+\begin{align*}
+    \mathfrak{M}(\theta(\mathcal{P}) ;\rho) := \mathop{ \inf  }\limits_{\hat{\theta }} \mathop{ \sup  }\limits_{\mathbb{P}\in \mathcal{P}} \mathbb{E}_\mathbb{P}\left[ \rho(\hat{\theta},\theta(\mathbb{P})) \right]
+\end{align*}
+这里我们直接采用一个更具体的版本：对于检验一个参数类$ \Theta $，以及使用损失函数$ \rho = \ell $，即
+\begin{align*}
+    \mathfrak{M}(\Theta;\ell) := \mathop{ \inf  }\limits_{\hat{\theta }} \mathop{ \sup  }\limits_{\theta \in \Theta} \mathbb{E}_\theta\left[ \ell(\hat{\theta},\theta) \right]
+\end{align*}
+
+Minimax risk有几种trivial的bound：
+\begin{itemize}[topsep=2pt,itemsep=0pt]
+    \item 直接研究一个特定的估计量得到Minimax risk的upper bound，例如对于高斯均值$ X_i\mathop{ \sim  }\limits^{i.i.d.}N(\mu ,I_p\sigma ^2)  $，直接固定研究$ \hat{\mu }=\bar{X} $，得到
+    \begin{align*}
+        \mathfrak{M}\leq \mathop{ \sup  }\limits_{\mu \in \mathbb{R}} \mathbb{E}_\mu \left[ \ell(\hat{\mu }=\bar{X},\mu ) \right] = \dfrac{ p\sigma ^2 }{ n }
+    \end{align*}
+    \item 缩小参数类得到Minimax risk的lower bound，例如本节即将介绍的Le Cam's method：直接将参数空间缩小到两点，然后就能够和$ d_{\mathrm{ TV } } $挂钩。
+    \item Worst case Bayes risk. 定义为
+    \begin{align*}
+        R_B^*:= \mathop{ \sup  }\limits_{\pi} \mathop{ \inf  }\limits_{\hat{\theta }} \mathbb{E}_{\theta \sim \pi}\left[ \ell(\hat{\theta},\theta) \right] 
+    \end{align*}
+    即：对于每个$ \pi $找到最优的估计量$ \hat{\theta } $，由于对于每个$ \pi $得到的Bayes risk$ R_\pi $都是在先验均值意义上的risk，所以有
+    \begin{align*}
+        \mathfrak{M}\geq R_\pi,\quad \forall \pi 
+    \end{align*}
+    遍历所有参数先验$ \pi=\pi_\theta  $\footnote{在实操上只要取一族参数先验一般就能得到一个不错的bound，不一定要取便整个先验假设类。}最后取最大值就是Worst case Bayes risk，自然构成了Minimax risk的一个lower bound
+    \begin{align*}
+        \mathfrak{M}\geq \mathop{ \sup  }\limits_{\pi}R_\pi = R_B^* 
+    \end{align*}
+    
+    
+
+    另一种理解方式就是$ \inf\sup \geq \sup\inf $.
+\end{itemize}
+
+
+
+\textbf{Example:} $ d $维OLS的Minimax risk的一个bound可以被精确地计算出来，为
+\begin{align*}
+    \mathfrak{M}_{\mathrm{ OLS }(n,d,\mathbf{X})} (\mathbb{R}^d; \left\Vert \, \cdot \,  \right\Vert _2) = \sigma ^2 \dfrac{ \mathrm{ rank }(\mathbf{X}) }{ n } 
+\end{align*}
+但是对于更多/更复杂的情况，我们很难精确计算出Minimax bound，(而且minimax bound)的具体值与$ \ell $的尺度变换有关，所以经常我们会关心下面这种情况：
+
+
+
+{\color{red}\textbf{Goal:}} 对于Minimax bound, i.e. 我们构建的统计量“最好情况下”能将“最坏情况的”risk bound住，我们希望研究它的\uline{rate}，也就是
+\begin{align*}
+    \mathfrak{M}(\Theta;\ell) \asymp \text{ func of }( \dim(\Theta),N,\text{ structure params, etc.})
+\end{align*}
+这要求我们分别研究upper bound和lower bound，Hopefully如果两个bound是match的，我们就能对Minimax risk的趋势有一个比较好的理解。
+
+
+
+\subsection{Minimax Lower Bound by Le Cam's Method}\label{subsec:LeCam}
+
+
+一般来说在Minimax的bound中我们经常关心的问题是lower bound，因为minimax lowed bound可以自然制作一个：
+\begin{align*}
+    R(\hat{\theta })\geq \mathfrak{M}(\Theta;\ell) \geq \text{minimax lower bound}
+\end{align*}
+从而得到某个估计量的risk下界。结合前面关于bound$ \mathbb{E}\left[ \left\Vert \mathbb{P}_n-\mathbb{P} \right\Vert  \right]  $的讨论，其实我们就能够得到对某个给定估计量的好坏的两边的bound了。
+
+得到Minimax lower bound的基本思路就是
+\begin{align*}
+    \mathfrak{M}(\Theta;\ell) = \mathop{ \inf  }\limits_{\hat{\theta }} \mathop{ \sup  }\limits_{\theta \in \Theta} \mathbb{E}_\theta\left[ \ell(\hat{\theta},\theta) \right] \geq \mathop{ \inf  }\limits_{\hat{\theta }} \mathop{ \sup  }\limits_{\theta \in {\color{red}\Theta '}} \mathbb{E}_\theta\left[ \ell(\hat{\theta},\theta) \right] 
+\end{align*}
+其中$ \Theta' \subseteq \Theta $一般是某种好计算的情况，我们就能够算出lower bound了。
+
+
+
+
+
+
+
+\subsubsection{Le Cam's Two-Point Method}
+
+Le Cam是最为简单粗暴的，即用上述的第二条，直接将参数空间变成两点，用假设检验的视角来解决。
+
+具体来说，我们研究将参数空间缩小到$ \tilde{\Theta}:= \{\theta _0, \theta _1\} $，这样得到
+\begin{align*}
+    \mathfrak{M}(\Theta)\geq \mathfrak{M}(\tilde{\Theta}) =& \mathop{ \inf  }\limits_{\hat{\theta }} \mathop{ \sup  }\limits_{\theta \in \tilde{\Theta}} \mathbb{E}_\theta\left[ \ell(\hat{\theta},\theta) \right] 
+\end{align*}
+并对损失函数施加一个$ \alpha  $-triangle inequality，即
+\begin{align*}
+    \ell(\theta _0,\theta _1)\leq \alpha \left(\ell(\theta _0, \theta ) + \ell(\theta , \theta _1)\right) 
+\end{align*}
+
+在这种情况下，$ \ell $能自然诱导出一个最优检验depending on $ \ell(\hat{\theta },\theta _0)-\ell(\hat{\theta },\theta _1) $，用这个检验得到
+\begin{align*}
+    \mathfrak{M}(\tilde{\Theta}) =& \mathop{ \inf }\limits_{\theta \in \tilde{\Theta }} \mathop{ \sup  }\limits_{\hat{\theta }} \mathbb{E}_\theta\left[ \ell(\hat{\theta},\theta) \right] \\
+    = & \mathbb{E}_{\theta _0}\left[ \ell(\hat{\theta },\theta _1) \right] \vee \mathbb{E}_{\theta _1}\left[ \ell(\hat{\theta },\theta _0) \right] 
+\end{align*}
+然后用Markov不等式链接期望和概率，然后再联系到$ d_{\mathrm{ TV } } $即可得到Le Cam's method的bound:
+\begin{align*}
+    1-d_{\mathrm{ TV } }(\mathbb{P}_{\theta _0},\mathbb{P}_{\theta _1}) \leq & \mathbb{P}_{\theta _0}\left( \text{test gives }\theta _1 \right) + \mathbb{P}_{\theta _1}\left( \text{test gives }\theta _0 \right) \\
+    =& \mathbb{P}_{\theta _0}\left(  \ell(\hat{\theta },\theta _0) \geq \ell(\hat{\theta },\theta _1) \right)  + \mathbb{P}_{\theta _1}\left( \ell(\hat{\theta },\theta _1) \geq  \ell(\hat{\theta },\theta _0) \right) \\
+    \leq & \mathbb{P}_{\theta _0}\left(   \ell(\hat{\theta },\theta _0) \geq \dfrac{ \ell(\theta _0,\theta _1) }{ 2\alpha  }  \right) + \mathbb{P}_{\theta _1}\left( \ell(\hat{\theta },\theta _1) \geq \dfrac{ \ell(\theta _0,\theta _1) }{ 2\alpha  }  \right) \\
+    \leq & \dfrac{ 2\alpha  }{ \ell(\theta _0,\theta _1) }\left( \mathbb{E}_{\theta _0}\left[ \ell(\hat{\theta },\theta _1) \right] + \mathbb{E}_{\theta _1}\left[ \ell(\hat{\theta },\theta _0) \right] \right)\\
+    \leq & \dfrac{ 4\alpha  }{ \ell(\theta _0,\theta _1) }\left( \mathbb{E}_{\theta _0}\left[ \ell(\hat{\theta },\theta _1) \right] \vee \mathbb{E}_{\theta _1}\left[ \ell(\hat{\theta },\theta _0) \right] \right)\\
+    =& \dfrac{ 4\alpha  }{ \ell(\theta _0,\theta _1) }\mathfrak{M}(\tilde{\Theta})
+\end{align*}
+于是得到了{\color{red}Le Cam's two-point method}的bound：
+\begin{align*}
+    {\color{red}\mathfrak{M}(\Theta)\geq \mathfrak{M}( \tilde{\Theta})\geq \dfrac{ \ell(\theta _0,\theta _1) }{ 4\alpha  }\left( 1-d_{\mathrm{ TV } }(\theta_0,\theta _1) \right),\quad \forall \theta _0,\theta _1\in \Theta}\\
+     \Rightarrow \mathfrak{M}(\Theta)\geq \mathop{ \sup  }\limits_{\theta _0,\theta _1\in \Theta } \dfrac{ \ell(\theta _0,\theta _1) }{ 4\alpha  }\left( 1-d_{\mathrm{ TV } }(\theta_0,\theta _1) \right) 
+\end{align*}
+
+\begin{point}
+    关于$ \alpha  $的取法
+\end{point}
+
+对于常用的平方损失$ \ell(\theta ,\theta ')= \left\Vert \theta -\theta ' \right\Vert _2^2  $, $ \alpha =2 $.
+
+
+\begin{point}
+    Le Cam two-point on Bayesian setting
+\end{point}
+
+Le Cam方法的核心是将参数空间缩小到两点。基于这个哲学，我们也可以利用Bayesian risk来做bound。具体来说，\textbf{使用平方损失时}，我们采用先验类$ \{\theta _0,\theta _1\} $上的Bernoulli，并得到取等概率时的Bayesian risk bound
+\begin{align*}
+    \mathfrak{M}(\Theta)\geq \mathfrak{M}(\tilde{\Theta})\geq \dfrac{ \left\Vert \theta _0-\theta _1 \right\Vert _2^2 }{ 4  }\left( 1-d_{\mathrm{ TV } }(\mathbb{P}_{\theta _0},\mathbb{P}_{\theta _1}) \right) 
+\end{align*}
+（比前述的$ \alpha =2 $版本更紧）。
+
+
+
+
+
+\subsubsection{Upgrades Le Cam's Two-Point Method by Assouad's Lemma}
+
+直接缩小到两点疑似有点太极端了，而且对于高维情况下，其实是完全省略掉了高维空间带来的结构，所以没那么极端的方式（i.e. 也就是一种two-point method的升级版）是在每个维度上各有两个点，即$ 2^p $个点的检验。当然额外我们要求$ \ell $是可以直接tensorize的，比如$ L_1 $或平方损失。这里以平方损失$ \left\Vert \, \cdot \,  \right\Vert _2^2 $为例，取的点是边长为$ \varepsilon  $的cube,
+\begin{align*}
+    \mathbb{E}\left[ \ell(\theta ,\hat{\theta }) \right] \mathop{ = }\limits^{\text{tensorize}}  & \sum_{i=1}^p \mathbb{E}\left[ \ell_i(\hat{\theta }_i,\theta _i) \right]  \\
+    \geq & \dfrac{ 1 }{ 4 } \sum_{i=1}^p \mathbb{E}\left[ (\theta _{i0}-\theta _{i1})^2 \right] \\
+    \geq & \dfrac{ \varepsilon ^2 }{ 4 } \sum_{i=1}^p \inf_{\hat{\theta }_i} \mathbb{P}\left( \theta _i\neq \hat{\theta }_i \right)\\
+    \geq & \dfrac{ \varepsilon ^2 }{ 8 } \sum_{i=1}^p \left(1- d_{\mathrm{ TV } }(\mathbb{P}_{X|\theta _{i0}},\mathbb{P}_{X|\theta _{i1}}) \right)
+\end{align*}
+对于$ d_{\mathrm{ TV } } $有如下的tensorize关系\footnote{见YW P. 69}：
+\begin{align*}
+    d_{\mathrm{ TV } }(\mathbb{P}_{X|\theta _{i0}},\mathbb{P}_{X|\theta _{i1}}) \leq \mathop{ \max  }\limits_{\text{Hamming distance}(\theta ,\theta ')=1}d_{\mathrm{ TV } }(\mathbb{P}_{X|\theta },\mathbb{P}_{X|\theta '})
+\end{align*}
+得到升级版的bound：Assouad's lemma
+\begin{align*}
+    \mathfrak{M}(\Theta)\geq \dfrac{ \varepsilon ^2p }{ 8 } \left(1- \mathop{ \max  }\limits_{\substack{\text{HamDist}(\theta ,\theta ')=1\\\theta ,\theta '\in \text{cube}_p(\varepsilon )}}d_{\mathrm{ TV } }(\mathbb{P}_{X|\theta },\mathbb{P}_{X|\theta '}) \right)
+\end{align*}
+
+可以看到这个引理能将MiniMax risk从$ \gtrsim 1 $升级到$ \gtrsim p $，能够具有一些高维性质。
+
+
+
+
+\subsubsection{Minimax by Fano's Method}
+
+Fano's method可称之为是一种“更纯净”的方法，因为基本的原则就是：我们但凡进行估计（数据处理）就会损失信息，所以如果估计任务$ \theta (\mathcal{P}) $非常复杂，那么估计过程中损失的信息量也会更大，进而导致误差，这是（我认为的）基于信息的bound的理解。Fano's method的idea是：找到一个合适的数据processing pipeline，让丢失信息量不大的情况下将原本的模型简化到可以简单计算的情况（简单in the sense that 可以构建直接的概率和信息之间的计算关系），然后再通过信息的单调性来得到Minimax risk的bound。
+
+
+
+
+
+
+\begin{point}
+    Roadmap
+\end{point}
+
+
+
+
+\begin{enumerate}[topsep=2pt,itemsep=0pt]
+    \item 对$ \theta  $和$ \hat{\theta } $作离散化（一个channel）：考虑假设类$ \Theta  $的一个$ 2\delta  $-packing $ \mathcal{M}=\mathcal{M}(2\delta ,\Theta, \ell(\, \cdot \, ))=\{\theta _i\}_{i=1}^{\left\vert \mathcal{M} \right\vert } $，这个packing诱导出一个一个变换$ f $，将任意$ \tilde{\theta }\in\Theta  $映射到$ \mathcal{M} $中最近的点：
+    \begin{align*}
+        f(\hat{\theta })= \mathop{ \arg\min  }\limits_{\theta _i\in \mathcal{M}} \ell(\hat{\theta },\theta _i)  
+    \end{align*}
+    利用这个pipe我们有下面的chain：
+    \begin{align*}
+        f(\theta ) \leftrightarrow \theta \leftrightarrow X \leftrightarrow \hat{\theta } \leftrightarrow f(\hat{\theta }) 
+    \end{align*}
+    \item 用离散化的集合做假设检验：$ \mathbf{1}\{f(\theta )\neq f(\hat{\theta })\} $，相当于是将$ (f(\theta ),f(\hat{\theta })) $通过一个channel传递，所以可以直接用信息的单调性(\ref{eq:info_channel})处理
+    \begin{align*}
+        I(\theta ;X)\geq& I(f(\theta ) ;f(\hat{\theta }))\\
+        =& D_{KL}(P_{f(\theta ),f(\hat{\theta })}\Vert P_{f(\theta )}\otimes P_{f(\hat{\theta })})\\
+        \geq & D_{KL}(\text{error rate}\Vert \mathrm{ Bernoulli }(1-\dfrac{ 1 }{ \left\vert \mathcal{M} \right\vert  }  ))  
+    \end{align*}
+    \item 通过如上两个channel，我们已经能将互信息简化到两个Bernoulli的情形了，这允许我们直接搭建互信息和概率之间的关系。通过一些trivial的计算可以得到
+    \begin{align*}
+        I(\theta ;X)\geq&D_{KL}(\text{error rate}\Vert \mathrm{ Bernoulli }(1-\dfrac{ 1 }{ \left\vert \mathcal{M} \right\vert  }  ))  \geq -\log 2 + \log \left\vert \mathcal{M} \right\vert \left(1- \text{error rate}\right)
+    \end{align*}
+    具体再研究里面的error rate是怎么倒的可以得到：
+    \begin{align*}
+        \mathbb{P}_{\theta \sim \mathrm{ Unif }(\mathcal{M})}\left( \ell(\hat{\theta },\theta )\geq  \delta \right) \geq & \mathbb{P}_{\theta \sim \mathrm{ Unif }(\mathcal{M})}\left( \ell(f(\hat{\theta }),\theta )\geq 2\delta \right) \\
+        =&  \mathbb{P}_{\theta \sim \mathrm{ Unif }(\mathcal{M})}\left( \ell(f(\hat{\theta }),f(\theta) )\geq 2\delta \right) \\
+        =& \mathbb{P}_{f(\theta),f(\hat{\theta })}\left( f(\theta )\neq f(\hat{\theta }) \right)\\
+        =& \text{error rate}\\ 
+        \geq & 1-\dfrac{ I(\theta ;X)+\log 2 }{ \log \left\vert \mathcal{M} \right\vert  } 
+    \end{align*}
+d
+    \item 用与two-point method类似的Markov不等式即可得到$ \mathbb{E} $的Minimax bound\footnote{这里的损失函数需要是齐次的，比如$ \ell = \left\Vert \, \cdot \,  \right\Vert _p $，否则需要按照power数修成$ \varepsilon  $的power。比如对于平方损失需要修正成
+    \begin{align*}
+        \mathfrak{M}(\Theta)\geq \delta^2 \big(1-\dfrac{ I(\theta ;X)+\log 2 }{ \log \left\vert \mathcal{M} \right\vert  }\big)
+    \end{align*}
+    }：
+    \begin{align*}
+        \mathfrak{M} =& \mathop{ \inf  }\limits_{\hat{\theta }} \mathop{ \sup  }\limits_{\theta \in \Theta} \mathbb{E}_\theta\left[ \ell(\hat{\theta},\theta) \right] \\
+        \geq & \mathop{ \inf  }\limits_{\hat{\theta }} \mathbb{E}_{\theta \sim \mathrm{ Unif }(\mathcal{M}) }\left[  \ell(\hat{\theta},\theta) \right] \\
+        \geq & \mathop{ \inf  }\limits_{\hat{\theta }} \delta \mathbb{P}_{\theta \sim \mathrm{ Unif }(\mathcal{M})}\left( \ell(\hat{\theta},\theta) \geq \delta  \right)\\
+        \geq & \mathop{ \inf  }\limits_{\hat{\theta }} \delta \big(1-\dfrac{ I(\theta ;X)+\log 2 }{ \log \left\vert \mathcal{M} \right\vert  }\big)\\
+        =&  \delta \big(1-\dfrac{ I(\theta ;X)+\log 2 }{ \log \left\vert \mathcal{M} \right\vert  }\big)
+    \end{align*}
+    
+    
+    
+    
+    
+    
+    
+
+
+
+
+
+    % \item 利用“离散化”这个channel的信息处理过程得到关于互信息的bound：
+    % \begin{align*}
+    %     I(\theta ;X)\geq& I(f_\text{test}(\theta ) ;f_\text{test}(\hat{\theta }))\\
+    %     =&D_{KL}(P_{f_\text{test}(\theta )}\Vert P_{f_\text{test}(\hat{\theta })})\\
+    % \end{align*}
+    
+    % 既然packing是对假设类的离散化近似，所以我们可以trivial地用$ \mathcal{M}(2\delta ) $上的均匀分布来作为先验，得到一个Bayes risk的bound
+    % \begin{align*}
+    %     \mathfrak{M} \geq & R_{\pi = \mathrm{ Unif }(\mathcal{M}(2\delta )) } \\
+    %     =& \mathop{ \inf  }\limits_{\hat{\theta }} \mathbb{E}_{\theta \sim \pi}\left[ \ell(\hat{\theta },\theta ) \right]  \\
+    %     \geq & \mathop{ \inf  }\limits_{\hat{\theta }} \delta \mathbb{P}_{\theta \sim \pi}\left( \ell(\hat{\theta },\theta ) \geq \delta  \right)\\
+    %     =& \mathop{ \inf  }\limits_{\hat{\theta }} \delta \sum_{i=1}^M \dfrac{ 1 }{ M }\mathbb{P}_{\theta _i}\left( \ell(\hat{\theta },\theta _i) \geq \delta  \right)\\
+    % \end{align*}
+    % 注意到这里的$ \{\ell(\hat{\theta },\theta ) \geq \delta \} $类似于是一个“发生错误”的事件，我们可以用基于packing和$ \hat{\theta } $的假设检验来处理它，方法与two-point类似。
+\end{enumerate}
+
+    
+\subsubsection{Summary of Minimax Lower Bound}
+Roughly speaking，Minimax lower bound希望找到某种假设类的近似$ \Theta'\subset \Theta  $（比如$ \Theta' $包含两个点的Le Cam's method，或者$ 2^p $个点的Assouad's lemma，或者为$ \Theta $的packing set的Fano's method），使得
+\begin{align*}
+    \mathfrak{M}(\Theta)\geq \mathfrak{M}(\Theta')
+\end{align*}
+这样的离散化操作让Minimax是一个可以计算的问题。Information theoretic的视角是：离散化操作是一种information processing的channel，所以我们只要能对离散化的情形bound住某种信息（比如互信息），然后再通过信息的单调性来得到Minimax risk的bound。（离散化的相比原本集合的“更简单”也体现在可以容易地直接将信息与概率对应起来，然后用Markov不等式来得到Minimax risk (which is some $ \mathbb{E} $)的bound）。
+
+
+
+
+
+\subsection{Minimax Upper Bound \`a la Le Cam-Birg\'e's comparison theorem}
+
+另一侧是Minimax upper bound，思路也很直接，就是找到某种“好的”估计量$ \tilde{\theta } $，使得
+\begin{align*}
+    \mathfrak{M}(\Theta) = \mathop{ \inf  }\limits_{\hat{\theta }} \mathop{ \sup  }\limits_{\theta \in \Theta} \mathbb{E}_\theta\left[ \ell(\hat{\theta},\theta) \right] \leq \mathbb{E}_\theta\left[ \ell(\tilde{\theta } ,\theta ^* ) \right]
+\end{align*}
+这个估计量最好是一种“通用”的方法，使得对于各种模型我们都能得到一个不错的upper bound（因为如果对于每个模型都要重新构造一个估计量，那就有点显得画蛇添足了，这个$ \tilde{\theta } $的通用性使得我们可以研究一些我们不知道怎么解决的问题）（“不知道怎么解决”也可以是in the sense of不知道怎么在computationally efficient的情况下解决）。
+
+
+\subsubsection{Le Cam-Birg\'e's comparison theorem}
+
+
+Le Cam-Birg\'e's comparison theorem事实上也是基于离散化+假设检验问题的，具体来说是用那个最优估计量\footnote{我们不一定知道，但我们会有一些关于这个最优估计量的一些性质。}在一个covering set上进行一个"tournament"，选择数据最倾向于选择的点作为估计量。
+
+Le Cam-Birg\'e's comparison的原版版本使用的是Hellinger距离$ H^2(P,Q):= \left( \int \sqrt{p(x)-q(x)}dx \right)^2 $（见YW P110），这里暂且遵循这个版本，即
+\begin{align*}
+    \ell(\hat{\theta },\theta ) = H^2(P_{\hat{\theta }},P_\theta ),\quad \theta \in \Theta
+\end{align*}
+
+
+
+\textbf{Roadmap:}首先假设我们有某种最优decision rule（pairwise comparison）$ \psi_{ij}(\mathcal{D} ) $可以评价“数据更favor$ \{\theta _i,\theta _j\} $中的哪个点”，即下面的假设检验问题：
+\begin{align*}
+    \theta \in \mathrm{Ball}(\theta _i) \mapsto \mathcal{P}\Leftrightarrow \theta \in \mathrm{Ball}(\theta _j) \mapsto \mathcal{Q}
+\end{align*}
+对于这种简单的假设检验问题，我们是知道最小的错误概率形式的：可以用$ d_{\mathrm{ TV } } $表示出来\footnote{这里只给出结果，见YW P. 108}：
+\begin{align}\label{eq:LeCamBirgePairwise}
+     \min_{\psi}\big\{ \sup_{P\in\mathcal{P}} P(\psi\text{ favor }Q) +  \sup_{Q\in\mathcal{Q}} Q(\psi\text{ favor }P) \big\} =& 1-d_{\mathrm{ TV } }(\mathrm{ conv }(\mathcal{P}^{\otimes n}),\mathrm{ conv }(\mathcal{Q}^{\otimes n})) \\
+     \leq &\big( 1-\dfrac{ 1 }{ 2 } H^2(\mathrm{ conv }(\mathcal{P}), \mathrm{ conv }(\mathcal{Q}))  \big)^n \\\leq& \exp\left[ -\dfrac{ n }{ 2 } H^2(\mathrm{ conv }(\mathcal{P}), \mathrm{ conv }(\mathcal{Q})) \right] 
+\end{align}
+也就是对于每一对给定的点$ \theta _i,\theta _j $和某种意义上的以之为中心的球，我们可以得到对这对点的一个理论最优区分方式$ \psi_{ij} $，将这个区分方法replicate到整个假设类的covering set上就能得到整体错误率的一个bound。
+
+
+
+\begin{enumerate}[topsep=2pt,itemsep=2pt]
+    \item 首先是pairwise comparison: 对于两个点$ \theta _i,\theta _j $和它们对应的Hellinger distance ball $ B_{H}(\theta _i, \varepsilon ) $, $ B_{H}(\theta _j, \varepsilon ) $，我们考虑应该判定$ \theta  $是在哪个ball里面。   
+    想象我们有某种（\textbf{基于数据的}）比较方法$ \psi_{ij}(\mathcal{D} ) $，并基于这个$ \psi_{ij} $决定我们判定
+    \begin{align*}
+        \theta \in \begin{cases}
+            B_{H}(\theta _i, \varepsilon ) & \text{if }\psi_{ij}(\mathcal{D} )=0,\qquad\text{v.s.}\\
+            B_{H}(\theta _j, \varepsilon ) & \text{if }\psi_{ij}(\mathcal{D} )=1
+        \end{cases}
+    \end{align*}
+    利用上面\eqref{eq:LeCamBirgePairwise}的bound，我们知道最优检验$ \psi_{ij} $满足
+    \begin{align*}
+         \sup_{\theta \in B_{H^2}(\theta _i, \varepsilon )} P(\psi_{ij} = 1) \vee \sup_{\theta \in B_{H^2}(\theta _j, \varepsilon )} P(\psi_{ij} = 0) \leq& \exp\left[ -\dfrac{ n }{ 2 } H^2(\mathrm{ conv }(\mathcal{P}, \mathrm{ conv }(\mathcal{Q}))) \right] \\
+         =& \exp\left[ -\dfrac{ n }{ 2 } H^2(B_{H}(\theta _i, \varepsilon ), B_{H}(\theta _j, \varepsilon )) \right]
+    \end{align*}
+    \item 制作packing set使得上述的pairwise comparison可以扩展覆盖整个$ \Theta  $。我们考虑$ \Theta  $的一个（maximal）$ \delta  $-packing $ \mathcal{M}=\mathcal{M}(\delta ,\Theta, H(\, \cdot \, ,\, \cdot \, ))=\{\theta _i\}_{i=1}^{\left\vert \mathcal{M} \right\vert } $，它自然也是一个$ \delta $ covering。 然后我们取上面的$ \varepsilon  = \delta  $，这样我们就得到$ \forall i\neq j \in \mathcal{M}, H(P_{\theta _i},P_{\theta _j})\geq 4\delta :\, $
+    \begin{align*}
+        & \sup_{P\in B(\theta _i,\delta  ), Q\in B(\theta _j,\delta  )} H(P,Q) \geq H(P_{\theta _i},P_{\theta _j}) - 2\delta  \geq H(P,Q) \geq H(P_{\theta _i},P_{\theta _j}) / 2\geq 2\delta  \\
+         \Rightarrow& \sup_{\theta \in B_{H^2}(\theta _i, \varepsilon )} P(\psi_{ij} = 1) \vee \sup_{\theta \in B_{H^2}(\theta _j, \varepsilon )} P(\psi_{ij} = 0) \leq \exp\left[ -\dfrac{ n  }{ 8 }H^2(P_{\theta _i},P_{\theta _j})  \right] \leq \exp\left[ 2n\delta ^2 \right],\quad H(P_{\theta _i},P_{\theta _j})\geq 4\delta
+    \end{align*}
+    直观来说：只要$ \theta _i,\theta _j $“不是特别近”，我们就能大概率区分开来。
+
+    \item 升级到packing set并构造估计量。
+    
+    由于对任意的$ i\neq j\in \mathcal{M} $都有一个对应的$ \psi_{ij} $，我们可以用这组$ \{\psi_{ij}\} $来判断$ \theta $在哪个ball里面，具体如下：
+    \begin{align*}
+        \text{def. }T_i:=& \begin{cases}
+            \max_{\theta_j\in \mathcal{M}} H(P_{\theta _i},P_{\theta _j}) & \text{if }\psi_{ij}(\mathcal{D} )=1,\quad H(P_{\theta _i},P_{\theta _j})\geq 4\delta \\
+            0 & \text{otherwise}
+        \end{cases} \\
+        \hat{\theta }\in&  \mathop{ \arg\min  }\limits_{\theta _i\in \mathcal{M}} T_i 
+    \end{align*}
+    也就是：对于每个$ \theta _i $，$ T_i $统计的是：与$ \theta _i $距离足够远（所以大概率不会和$ \theta _i $由于随机误差而混淆），但又能够“打败”$ \theta i $的那些$ \theta _i\in\mathcal{M} $，然后取与opponents最近的$ \theta _i $作为估计量（或者没有足够远的opponents能打败$ \theta _i $时$ T_i=0 $的话自然$ \theta _i $是最优）。
+    
+    \item 研究升级后的估计量的prob bound，具体来说，如果ground truth是$ \theta ^* \in B_H(\theta ^*, \delta )$，那么
+    \begin{align*}
+        \mathbf{1}_{H(P_{\hat{\theta }},P_{\theta ^*})\geq 2\delta } \leq \mathbf{1}_{\max(T_{i^*},T_{\hat{i}})\geq 2\delta } = \mathbf{1}_{T_{i^*}\geq 2\delta } 
+    \end{align*}
+    于是:$ \forall t\geq 1  $
+    \begin{align*}
+        \mathbb{P}_{\theta ^*}\left( H(P_{\hat{\theta }}, P_{\theta^*}) \geq 4t\delta   \right) \leq & P_{\theta^*}  \left( T_{i^*}\geq 4t\delta  \right) \leq \left\vert \mathcal{M} \right\vert \exp\left[ -2nt^2\delta ^2 \right]\tag{$ \star $}
+    \end{align*}
+    （这里得到了一个包含$ t $的tail bound，通过调整前面不等式的packing/covering scale的位置很容易得到）。同时需要一个一些\uline{技术条件1}：$ 2n\delta ^2\geq 1 $之类的。
+
+    积分就得到关于期望的Minimax bound:
+    \begin{align*}
+        \mathfrak{M}(\Theta) =& \mathop{ \inf  }\limits_{\hat{\theta }} \mathop{ \sup  }\limits_{\theta \in \Theta} \mathbb{E}_\theta\left[ \ell(\hat{\theta},\theta) \right] \\
+        \leq & \mathop{ \sup  }\limits_{\theta \in \Theta} \mathbb{E}_\theta\left[ \ell(\hat{\theta}_{\{\psi_{ij}\}},\theta) \right] \\
+        \leq & \int _0^\infty \mathbb{P}\left( H^2(P_{\hat{\theta }}, P_{\theta^*}) \geq \xi  \right)  \,\mathrm{d}\xi 
+    \end{align*}
+    之后增加一个$ 2n\delta ^2 \geq \log \left\vert \mathcal{M} \right\vert  $的\uline{技术条件2}使得我们可以分别积$ [0,\delta ) $和$ [\delta,\infty ) $就能得到Minimax upper bound：
+    \begin{align*}
+        \mathfrak{M}(\Theta)  \lesssim \delta ^2,\quad n\delta ^2 \gtrsim \log \left\vert \mathcal{M}(\delta , \Theta , H(\, \cdot \, ,\, \cdot \, )) \right\vert \vee 1
+    \end{align*}
+    
+    \textbf{Note: }关于这两个\uline{技术条件}，可以发现$  \mathrm{R.H.S.}  $是一个$ \delta  $的减函数，所以我们只要取最小的possible $ \delta  $就能得到优化的Minimax upper bound.
+    
+    
+\end{enumerate}
+
+    
+\textbf{Note: }Le Cam-Birg\'e's comparison theorem中关键的一步是：不需要具体/显式地找出某个足够好的估计量，而是给出某个好的估计量可以满足什么样的性质（具体来说，一个关于Hellinger distance的tournament和相关的prob bound），然后得到一个Minimax upper bound。
+
+\textbf{Note: }我们也可以只部分使用Le Cam-Birg\'e's comparison theorem，比如
+\begin{itemize}[topsep=2pt,itemsep=0pt]
+    \item 我们已经显式构造出了一个不错的估计量$ \tilde{\theta } $，那么直接bound
+    \begin{align*}
+        \sup_{\theta \in \Theta} \mathbb{E}_\theta\left[ \ell(\tilde{\theta } ,\theta) \right] 
+    \end{align*}
+    \item 我们能设计出某种不错的comparison方法$ \psi_{ij}(\left\Vert \, \cdot \,  \right\Vert ) $来得到一个类似于
+    \begin{align*}
+        \text{error rate}(B_{\left\Vert \, \cdot \,  \right\Vert }(\theta _i), B_{\left\Vert \, \cdot \,  \right\Vert }(\theta _j)) \leq \exp\left[ -\mathrm{const}(n,\delta,... )\cdot \left\Vert \theta _i-\theta _j \right\Vert ^2 \right],\quad \left\Vert \theta _i-\theta _j \right\Vert \geq C\delta
+    \end{align*}
+    的bound，那后面复刻upgrade到packing set上的过程，也会能得到一个Minimax upper bound。
+    
+    
+    
+\end{itemize}
+
+    
+
+
+\subsubsection{Refine Le Cam-Birg\'e's comparison theorem by Local Entropy}
 
 
 
